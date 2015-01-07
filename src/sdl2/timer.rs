@@ -1,4 +1,5 @@
 use std::mem;
+use std::raw;
 use libc::{uint32_t, c_void};
 
 pub use sys::timer as ll;
@@ -22,12 +23,14 @@ pub fn delay(ms: uint) {
 pub struct Timer<'a> {
     delay: uint,
     raw: ll::SDL_TimerID,
-    closure: &'a Box<FnMut() -> uint + 'a>,
+    closure: raw::TraitObject,
 }
 
 impl<'a> Timer<'a> {
-    pub fn new(delay: uint, callback: &'a Box<FnMut() -> uint + 'a>) -> Timer<'a> {
-        Timer { delay: delay, raw: 0, closure: callback }
+    pub fn new<F>(delay: uint, callback: F) -> Timer<'a>
+    where F: FnMut() -> uint, F: 'a  {
+        let c_param = unsafe { mem::transmute(box callback as Box<FnMut() -> uint>) };
+        Timer { delay: delay, raw: 0, closure: c_param }
     }
 
     pub fn start(&mut self) {
@@ -39,7 +42,7 @@ impl<'a> Timer<'a> {
                             _interval: uint32_t, 
                             param: *const c_void
                         ) -> uint32_t), 
-                    mem::transmute(self.closure)
+                    mem::transmute(&self.closure)
                 );
             self.raw = timer_id;
         }
@@ -76,12 +79,13 @@ fn test_timer_1() {
     let local_num: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
     let timer_num = local_num.clone();
     {
-        let f: Box<FnMut() -> uint> = box |&mut:| {
+        let f = |&mut:| {
             let mut num = timer_num.lock().unwrap();
             *num = *num + 1;
             10
         };
-        let mut timer = Timer::new(10, &f);
+
+        let mut timer = Timer::new(10, f);
         timer.start();
         delay(100);
         let num = local_num.lock().unwrap();
@@ -98,9 +102,9 @@ fn test_timer_1() {
 fn test_timer_2() {
     // Check that the closure lives long enough outside the block where
     // the timer was started.
-    let f: Box<FnMut() -> uint> = box |&:| { 0 };
+    let f = |&:| { 0 };
     let _ = {
-        let mut timer = Timer::new(1000, &f);
+        let mut timer = Timer::new(1000, f);
         timer.start();
         timer
     };
