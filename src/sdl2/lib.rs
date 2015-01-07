@@ -9,6 +9,8 @@ extern crate "sdl2-sys" as sys;
 
 pub use sdl::*;
 
+pub mod c_vec;
+
 pub mod keycode;
 pub mod scancode;
 

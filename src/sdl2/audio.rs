@@ -1,4 +1,5 @@
 //! Audio Functions
+use ::c_vec::CVec;
 use std::ptr;
 use std::mem;
 use std::ffi::{c_str_to_bytes, CString};
