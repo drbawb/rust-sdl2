@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::{c_str_to_bytes, CString};
 
 use SdlResult;
 use get_error;
@@ -21,8 +21,8 @@ pub fn set_clipboard_text(text: &String) -> SdlResult<()> {
 
 pub fn get_clipboard_text() -> SdlResult<String> {
     let result = unsafe {
-        let cstr = ll::SDL_GetClipboardText() as *const u8;
-        String::from_raw_buf(cstr)
+        let buf = c_str_to_bytes(ll::SDL_GetClipboardText());
+        String::from_utf8_lossy(buf).into_string()
     };
 
     if result.len() == 0 {

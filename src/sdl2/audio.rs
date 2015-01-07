@@ -1,7 +1,7 @@
 //! Audio Functions
 use std::ptr;
 use std::mem;
-use std::ffi::CString;
+use std::ffi::{c_str_to_bytes, CString};
 use std::borrow::ToOwned;
 use std::num::FromPrimitive;
 use libc;
@@ -50,8 +50,8 @@ pub fn get_num_audio_drivers() -> int {
 
 pub fn get_audio_driver(index: int) -> String {
     unsafe {
-        let buf = ll::SDL_GetAudioDriver(index as c_int);
-        CString::new(buf, false).as_str().unwrap().to_owned()
+        let buf = c_str_to_bytes(ll::SDL_GetAudioDriver(index as c_int));
+        String::from_utf8_lossy(buf).into_string()
     }
 }
 
@@ -61,8 +61,8 @@ pub fn get_num_audio_devices(iscapture: int) -> int {
 
 pub fn get_audio_device_name(index: int, iscapture: int) -> String {
     unsafe {
-        let buf = ll::SDL_GetAudioDeviceName(index as c_int, iscapture as c_int);
-        CString::new(buf, false).as_str().unwrap().to_owned()
+        let buf = c_str_to_bytes(ll::SDL_GetAudioDeviceName(index as c_int, iscapture as c_int));
+        String::from_utf8_lossy(buf).into_string()
     }
 }
 
@@ -83,8 +83,8 @@ pub fn audio_quit() {
 
 pub fn get_current_audio_driver() -> String {
     unsafe {
-        let buf = ll::SDL_GetCurrentAudioDriver();
-        CString::new(buf, false).as_str().unwrap().to_owned()
+        let buf = c_str_to_bytes(ll::SDL_GetCurrentAudioDriver());
+        String::from_utf8_lossy(buf)
     }
 }
 

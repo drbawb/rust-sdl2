@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::ffi::CString;
+use std::ffi::{c_str_to_bytes, CString};
 use std::num::FromPrimitive;
 use std::ptr;
 
@@ -79,8 +79,8 @@ pub fn get_scancode_from_key(key: KeyCode) -> ScanCode {
 
 pub fn get_scancode_name(scancode: ScanCode) -> String {
     unsafe {
-        let scancode_name = ll::SDL_GetScancodeName(scancode as u32);
-        String::from_raw_buf(scancode_name as *const u8)
+        let scancode_name = c_str_to_bytes(ll::SDL_GetScancodeName(scancode as u32));
+        String::from_utf8_lossy(scancode_name).into_string()
     }
 }
 
@@ -95,8 +95,8 @@ pub fn get_scancode_from_name(name: &str) -> ScanCode {
 
 pub fn get_key_name(key: KeyCode) -> String {
     unsafe {
-        let key_name = ll::SDL_GetKeyName(key as i32);
-        String::from_raw_buf(key_name as *const u8)
+        let key_name = c_str_to_bytes(ll::SDL_GetKeyName(key as i32));
+        String::from_utf8_lossy(key_name).into_string()
     }
 }
 

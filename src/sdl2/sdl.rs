@@ -1,5 +1,5 @@
 use std::borrow::ToOwned;
-use std::ffi::CString;
+use std::ffi::{c_str_to_bytes, CString};
 
 use sys::sdl as ll;
 
@@ -57,8 +57,8 @@ pub fn was_inited(flags: InitFlag) -> InitFlag {
 
 pub fn get_error() -> String {
     unsafe {
-        let cstr = CString::new(ll::SDL_GetError(), false);
-        cstr.as_str().unwrap().to_owned()
+        let buf = c_str_to_bytes(ll::SDL_GetError());
+        String::from_utf8_lossy(buf)
     }
 }
 
