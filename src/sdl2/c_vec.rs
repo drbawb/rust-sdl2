@@ -166,16 +166,14 @@ impl<T> AsSlice<T> for CVec<T> {
 
 #[cfg(test)]
 mod tests {
-    use prelude::v1::*;
-
     use super::CVec;
     use libc;
-    use ptr;
+    use std::ptr;
 
     fn malloc(n: uint) -> CVec<u8> {
         unsafe {
             let mem = ptr::Unique(libc::malloc(n as libc::size_t));
-            if mem.0.is_null() { ::alloc::oom() }
+            if mem.0.is_null() { panic!("malloc failed") }
 
             CVec::new_with_dtor(mem.0 as *mut u8,
                                 n,
