@@ -34,7 +34,7 @@ fn main() {
     };
 
     // Show obtained AudioSpec
-    println!("{}", device.get_spec());
+    println!("{:?}", device.get_spec());
 
     // Start playback
     device.resume();

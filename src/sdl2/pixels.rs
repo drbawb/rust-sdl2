@@ -136,7 +136,7 @@ impl PixelFormatFlag {
             PixelFormatFlag::Unknown | PixelFormatFlag::Index1LSB |
             PixelFormatFlag::Index1MSB | PixelFormatFlag::Index4LSB |
             PixelFormatFlag::Index4MSB
-                => panic!("not supported format: {}", *self),
+                => panic!("not supported format: {:?}", *self),
         }
     }
 
@@ -172,7 +172,7 @@ impl PixelFormatFlag {
             PixelFormatFlag::Unknown | PixelFormatFlag::Index1LSB |
             PixelFormatFlag::Index1MSB | PixelFormatFlag::Index4LSB |
             PixelFormatFlag::Index4MSB
-                => panic!("not supported format: {}", *self),
+                => panic!("not supported format: {:?}", *self),
         }
     }
 }
