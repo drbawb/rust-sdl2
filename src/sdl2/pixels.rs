@@ -60,7 +60,7 @@ pub struct PixelFormat {
 }
 
 impl_raw_accessors!(PixelFormat, *const ll::SDL_PixelFormat);
-impl_raw_constructor!(PixelFormat -> PixelFormat (raw: *const ll::SDL_PixelFormat));
+impl_raw_constructor!(PixelFormat => PixelFormat (raw: *const ll::SDL_PixelFormat));
 
 #[derive(Copy, Clone, PartialEq, Show, FromPrimitive)]
 pub enum PixelFormatFlag {
