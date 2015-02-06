@@ -19,37 +19,32 @@ pub fn delay(ms: u32) {
 }
 
 #[unstable = "Unstable because of move to unboxed closures and `box` syntax"]
-pub struct Timer<F> {
-    callback: Option<Box<F>>,
+pub struct Timer<'a> {
     _delay: u32,
     raw: ll::SDL_TimerID,
 }
 
-impl<F> Timer<F> {
+impl<'a> Timer<'a> {
     /// Constructs a new timer using the boxed closure `callback`.
     /// The timer is started immediately, it will be cancelled either:
     ///   * when the timer is dropped
     ///   * or when the callback returns a non-positive continuation interval
-    pub fn new(delay: u32, callback: Box<F>) -> Timer<F>
-    where F: Fn() -> u32, F: Send {
+    pub fn new(delay: u32, callback: &'a &Fn() -> u32) -> Timer<'a> {
         unsafe {
             let timer_id = ll::SDL_AddTimer(delay,
-                                            Some(c_timer_callback::<F>),
+                                            Some(c_timer_callback),
                                             mem::transmute_copy(&callback));
 
             Timer {
-                callback: Some(callback),
                 _delay: delay,
                 raw: timer_id,
             }
         }
     }
-
-    pub fn into_inner(mut self) -> Box<F> { self.callback.take().unwrap() }
 }
 
 #[unsafe_destructor]
-impl<F> Drop for Timer<F> {
+impl<'a> Drop for Timer<'a> {
     fn drop(&mut self) {
         let ret = unsafe { ll::SDL_RemoveTimer(self.raw) };
         if ret != 1 {
@@ -58,10 +53,9 @@ impl<F> Drop for Timer<F> {
     }
 }
 
-extern "C" fn c_timer_callback<F>(_interval: u32, param: *const c_void) -> uint32_t
-where F: Fn() -> u32, F: Send {
+extern "C" fn c_timer_callback(_interval: u32, param: *const c_void) -> uint32_t {
     unsafe {
-        let f: *const F = mem::transmute(param);
+        let f: &&Fn() -> u32 = mem::transmute(param);
         (*f)() as uint32_t
     }
 }
@@ -73,7 +67,7 @@ fn test_timer_runs_multiple_times() {
     let local_num = Arc::new(Mutex::new(0));
     let timer_num = local_num.clone();
 
-    let timer = Timer::new(100, Box::new(move|| {
+	let closure = move|| {
         // increment up to 10 times (0 -> 9)
         // tick again in 100ms after each increment
         //
@@ -82,7 +76,9 @@ fn test_timer_runs_multiple_times() {
             *num += 1;
             100
         } else { 0 }
-    }));
+    };
+
+    let timer = Timer::new(100, &(&closure as &Fn() -> u32));
 
     delay(1200);                         // tick the timer at least 10 times w/ 200ms of "buffer"
     let num = local_num.lock().unwrap(); // read the number back
@@ -96,17 +92,37 @@ fn test_timer_runs_at_least_once() {
     let local_flag = Arc::new(Mutex::new(false));
     let timer_flag = local_flag.clone();
 
-    let timer = Timer::new(500, Box::new(move|| {
+	let closure = || {
         let mut flag = timer_flag.lock().unwrap();
         *flag = true; 0
-    }));
+    };
+
+    let timer = Timer::new(500, &(&closure  as &Fn() -> u32));
 
     delay(700);
     let flag = local_flag.lock().unwrap();
     assert_eq!(*flag, true);
 }
 
-#[test]
+#[cfg(test)]
+mod wat {
+	use super::{delay, Timer};
+
+	fn foo<'a>() -> Timer<'a> {
+		let x = 100;
+		let closure = || { x };
+		Timer::new(100, &(&closure as & Fn() -> u32))
+	}
+
+	#[test]
+	fn wat_test() {
+		let timer = foo();
+		delay(300);
+		assert!(true);
+	}
+}
+
+/*#[test]
 fn test_timer_can_be_recreated() {
     use std::sync::{Arc, Mutex};
 
@@ -131,4 +147,5 @@ fn test_timer_can_be_recreated() {
     // check that timer was incremented twice
     let num = local_num.lock().unwrap();
     assert_eq!(*num, 2);
-}
+}*/
+
